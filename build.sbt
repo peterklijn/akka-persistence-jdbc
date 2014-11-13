@@ -2,7 +2,7 @@ import bintray.Plugin._
 
 seq(bintraySettings:_*)
 
-organization := "com.github.dnvriend"
+organization := "com.github.peterklijn"
 
 name := "akka-persistence-jdbc-fork-peterklijn"
 
