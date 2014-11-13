@@ -94,7 +94,7 @@ trait H2Statements extends GenericStatements {
 
 trait OracleStatements extends GenericStatements {
   def createTableIfNotExists() {
-    SQL(s"CREATE TABLE $schema$table ( " +
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
       s"persistence_id VARCHAR(255) NOT NULL, " +
       s"sequence_nr NUMERIC NOT NULL, " +
       s"snapshot CLOB NOT NULL, " +

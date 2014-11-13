@@ -1,18 +1,23 @@
-import bintray.Plugin._
+//import bintray.Plugin._
 
-seq(bintraySettings:_*)
+//seq(bintraySettings:_*)
 
 organization := "com.github.peterklijn"
 
-name := "akka-persistence-jdbc-fork-peterklijn"
+name := "akka-persistence-jdbc"
 
-version := "1.0.10"
+version := "1.0.9"
 
 scalaVersion := "2.11.2"
 
 crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 resolvers += "krasserm at bintray" at "http://dl.bintray.com/krasserm/maven"
+
+publishTo := Some("Artifactory Realm" at "http://dev.awfs.nl/artifactory/libs-release-local")
+//publishTo := Some("Artifactory Realm" at "http://dev.awfs.nl/artifactory/libs-snapshot-local")
+
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 libraryDependencies ++= {
     val akkaVersion = "2.3.6"
@@ -43,7 +48,7 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache2.0.php"))
 
-bintray.Keys.packageLabels in bintray.Keys.bintray := Seq("akka", "jdbc", "persistence")
-
-bintray.Keys.packageAttributes in bintray.Keys.bintray ~=
-  ((_: bintray.AttrMap) ++ Map("website_url" -> Seq(bintry.StringAttr("https://github.com/peterklijn/akka-persistence-jdbc")), "github_repo" -> Seq(bintry.StringAttr("https://github.com/peterklijn/akka-persistence-jdbc.git")), "issue_tracker_url" -> Seq(bintry.StringAttr("https://github.com/peterklijn/akka-persistence-jdbc/issues/"))))
+//bintray.Keys.packageLabels in bintray.Keys.bintray := Seq("akka", "jdbc", "persistence")
+//
+//bintray.Keys.packageAttributes in bintray.Keys.bintray ~=
+//  ((_: bintray.AttrMap) ++ Map("website_url" -> Seq(bintry.StringAttr("https://github.com/dnvriend/akka-persistence-jdbc")), "github_repo" -> Seq(bintry.StringAttr("https://github.com/dnvriend/akka-persistence-jdbc.git")), "issue_tracker_url" -> Seq(bintry.StringAttr("https://github.com/dnvriend/akka-persistence-jdbc/issues/"))))
