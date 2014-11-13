@@ -4,7 +4,7 @@ seq(bintraySettings:_*)
 
 organization := "com.github.dnvriend"
 
-name := "akka-persistence-jdbc"
+name := "akka-persistence-jdbc-fork-peterklijn"
 
 version := "1.0.10"
 
