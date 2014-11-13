@@ -5,6 +5,8 @@ import scalikejdbc.DBSession
 
 trait GenericSyncSnapshotStore extends JdbcSyncSnapshotStore with GenericStatements {
   override implicit val session: DBSession = ScalikeExtension(system).session
+
+  createTableIfNotExists()
 }
 
 class PostgresqlSyncSnapshotStore extends GenericSyncSnapshotStore with PostgresqlStatements

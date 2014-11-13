@@ -26,6 +26,8 @@ trait GenericStatements extends JdbcStatements with EncodeDecode {
   val schema = cfg.snapshotSchemaName
   val table = cfg.snapshotTableName
 
+  def createTableIfNotExists()
+
   def deleteSnapshot(metadata: SnapshotMetadata): Unit =
     SQL(s"DELETE FROM $schema$table WHERE persistence_id = ? AND sequence_nr = ?")
       .bind(metadata.persistenceId, metadata.sequenceNr).update().apply
@@ -54,13 +56,53 @@ trait GenericStatements extends JdbcStatements with EncodeDecode {
       .filterNot(snap => snap.metadata.timestamp > criteria.maxTimestamp)
 }
 
-trait PostgresqlStatements extends GenericStatements
+trait PostgresqlStatements extends GenericStatements {
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_nr BIGINT NOT NULL, " +
+      s"snapshot TEXT NOT NULL, " +
+      s"created BIGINT NOT NULL, " +
+      s"PRIMARY KEY (persistence_id, sequence_nr) " +
+      s")").execute().apply
+  }
+}
 
-trait MySqlStatements extends GenericStatements
+trait MySqlStatements extends GenericStatements {
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_nr BIGINT NOT NULL, " +
+      s"snapshot TEXT NOT NULL, " +
+      s"created BIGINT NOT NULL, " +
+      s"PRIMARY KEY (persistence_id, sequence_nr) " +
+      s")").execute().apply
+  }
+}
 
-trait H2Statements extends GenericStatements
+trait H2Statements extends GenericStatements {
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_nr BIGINT NOT NULL, " +
+      s"snapshot TEXT NOT NULL, " +
+      s"created BIGINT NOT NULL, " +
+      s"PRIMARY KEY (persistence_id, sequence_nr) " +
+      s")").execute().apply
+  }
+}
 
 trait OracleStatements extends GenericStatements {
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_nr NUMERIC NOT NULL, " +
+      s"snapshot CLOB NOT NULL, " +
+      s"created NUMERIC NOT NULL, " +
+      s"PRIMARY KEY (persistence_id, sequence_nr) " +
+      s")").execute().apply
+  }
+
   override def writeSnapshot(metadata: SnapshotMetadata, snapshot: Snapshot): Unit = {
     val snapshotData = encodeString(Snapshot.toBytes(snapshot))
     import metadata._
@@ -76,8 +118,23 @@ trait OracleStatements extends GenericStatements {
   }
 }
 
-trait MSSqlServerStatements extends GenericStatements
+trait MSSqlServerStatements extends GenericStatements {
+  def createTableIfNotExists() {
+    // TODO: Implement me :(
+  }
+}
 
+// FIXME: Add support for DB2 databases?
 trait DB2Statements extends GenericStatements
 
-trait InformixStatements extends GenericStatements
+trait InformixStatements extends GenericStatements {
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_nr NUMERIC NOT NULL, " +
+      s"snapshot CLOB NOT NULL, " +
+      s"created NUMERIC NOT NULL, " +
+      s"PRIMARY KEY (persistence_id, sequence_nr) " +
+      s")").execute().apply
+  }
+}

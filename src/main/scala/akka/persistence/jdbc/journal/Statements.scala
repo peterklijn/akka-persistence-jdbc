@@ -32,6 +32,8 @@ trait GenericStatements extends JdbcStatements with EncodeDecode {
   val schema = cfg.journalSchemaName
   val table = cfg.journalTableName
 
+  def createTableIfNotExists()
+
   def selectMessage(persistenceId: String, sequenceNr: Long): Option[PersistentRepr] =
     SQL(s"SELECT message FROM $schema$table WHERE persistence_id = ? AND sequence_number = ?").bind(persistenceId, sequenceNr)
       .map(rs => Journal.fromBytes(decodeBinary(rs.string(1))))
@@ -79,11 +81,47 @@ trait GenericStatements extends JdbcStatements with EncodeDecode {
   }
 }
 
-trait PostgresqlStatements extends GenericStatements
+trait PostgresqlStatements extends GenericStatements {
 
-trait MySqlStatements extends GenericStatements
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table (" +
+      s"persistence_id VARCHAR(255) NOT NULL," +
+      s"sequence_number BIGINT NOT NULL," +
+      s"marker VARCHAR(255) NOT NULL," +
+      s"message TEXT NOT NULL," +
+      s"created TIMESTAMP NOT NULL," +
+      s"PRIMARY KEY(persistence_id, sequence_number)" +
+      s")").execute().apply
+  }
+}
+
+trait MySqlStatements extends GenericStatements{
+
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_number BIGINT NOT NULL, " +
+      s"marker VARCHAR(255) NOT NULL, " +
+      s"message TEXT NOT NULL, " +
+      s"created TIMESTAMP NOT NULL, " +
+      s"PRIMARY KEY(persistence_id, sequence_number) " +
+      s")").execute().apply
+  }
+}
 
 trait H2Statements extends GenericStatements {
+
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_number BIGINT NOT NULL, " +
+      s"marker VARCHAR(255) NOT NULL, " +
+      s"message TEXT NOT NULL, " +
+      s"created TIMESTAMP NOT NULL, " +
+      s"PRIMARY KEY(persistence_id, sequence_number) " +
+      s")").execute().apply
+  }
+
   override def selectMessagesFor(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long): List[PersistentRepr] = {
     val maxRecords = if (max == java.lang.Long.MAX_VALUE) java.lang.Integer.MAX_VALUE.toLong else max
     SQL(s"SELECT message FROM $schema$table WHERE persistence_id = ? and (sequence_number >= ? and sequence_number <= ?) ORDER BY sequence_number limit ?")
@@ -95,6 +133,18 @@ trait H2Statements extends GenericStatements {
 }
 
 trait OracleStatements extends GenericStatements {
+
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_number NUMERIC NOT NULL, " +
+      s"marker VARCHAR(255) NOT NULL, " +
+      s"message CLOB NOT NULL, " +
+      s"created TIMESTAMP NOT NULL, " +
+      s"PRIMARY KEY(persistence_id, sequence_number) " +
+      s")").execute().apply
+  }
+
   override def selectMessagesFor(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long): List[PersistentRepr] = {
     SQL(s"SELECT message FROM $schema$table WHERE persistence_id = ? AND (sequence_number >= ? AND sequence_number <= ?) AND ROWNUM <= ? ORDER BY sequence_number")
       .bind(persistenceId, fromSequenceNr, toSequenceNr, max)
@@ -105,6 +155,11 @@ trait OracleStatements extends GenericStatements {
 }
 
 trait MSSqlServerStatements extends GenericStatements {
+
+  def createTableIfNotExists() {
+    // TODO: Implement me :(
+  }
+
   override def selectMessagesFor(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long): List[PersistentRepr] = {
     SQL(s"SELECT TOP ? message FROM $schema$table WHERE persistence_id = ? AND (sequence_number >= ${} AND sequence_number <= ?) ORDER BY sequence_number")
       .bind(max, persistenceId, fromSequenceNr, toSequenceNr)
@@ -115,6 +170,7 @@ trait MSSqlServerStatements extends GenericStatements {
 }
 
 trait DB2Statements extends GenericStatements {
+  // FIXME: Add support for DB2 databases?
   override def selectMessagesFor(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long): List[PersistentRepr] = {
     SQL(s"SELECT message FROM $schema$table WHERE persistence_id = ? AND (sequence_number >= ? AND sequence_number <= ?) ORDER BY sequence_number FETCH FIRST ? ROWS ONLY")
       .bind(persistenceId, fromSequenceNr, toSequenceNr, max)
@@ -124,4 +180,16 @@ trait DB2Statements extends GenericStatements {
   }
 }
 
-trait InformixStatements extends GenericStatements
+trait InformixStatements extends GenericStatements {
+
+  def createTableIfNotExists() {
+    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
+      s"persistence_id VARCHAR(255) NOT NULL, " +
+      s"sequence_number NUMERIC NOT NULL, " +
+      s"marker VARCHAR(255) NOT NULL, " +
+      s"message CLOB NOT NULL, " +
+      s"created DATETIME YEAR TO FRACTION(5) NOT NULL, " +
+      s"PRIMARY KEY(persistence_id, sequence_number) " +
+      s")").execute().apply
+  }
+}

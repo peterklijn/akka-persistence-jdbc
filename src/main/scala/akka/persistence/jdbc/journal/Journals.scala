@@ -5,6 +5,8 @@ import scalikejdbc.DBSession
 
 trait GenericJdbcSyncWriteJournal extends JdbcSyncWriteJournal with GenericStatements {
   override implicit val session: DBSession = ScalikeExtension(system).session
+
+  createTableIfNotExists()
 }
 
 class PostgresqlSyncWriteJournal extends GenericJdbcSyncWriteJournal with PostgresqlStatements
