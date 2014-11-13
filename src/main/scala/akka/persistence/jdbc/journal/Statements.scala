@@ -1,5 +1,7 @@
 package akka.persistence.jdbc.journal
 
+import java.sql.SQLSyntaxErrorException
+
 import akka.persistence.PersistentRepr
 import akka.persistence.jdbc.common.PluginConfig
 import akka.persistence.jdbc.util.{ByteString, Base64, EncodeDecode}
@@ -135,14 +137,21 @@ trait H2Statements extends GenericStatements {
 trait OracleStatements extends GenericStatements {
 
   def createTableIfNotExists() {
-    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
-      s"persistence_id VARCHAR(255) NOT NULL, " +
-      s"sequence_number NUMERIC NOT NULL, " +
-      s"marker VARCHAR(255) NOT NULL, " +
-      s"message CLOB NOT NULL, " +
-      s"created TIMESTAMP NOT NULL, " +
-      s"PRIMARY KEY(persistence_id, sequence_number) " +
-      s")").execute().apply
+    // TODO: Find a more elegant IF NOT EXISTS workaround
+    try {
+      SQL(s"SELECT count(*) FROM $schema$table").execute().apply
+    } catch {
+      case e: SQLSyntaxErrorException if e.getErrorCode == 942 =>
+        SQL(s"CREATE TABLE $schema$table ( " +
+          s"persistence_id VARCHAR(255) NOT NULL, " +
+          s"sequence_number NUMERIC NOT NULL, " +
+          s"marker VARCHAR(255) NOT NULL, " +
+          s"message CLOB NOT NULL, " +
+          s"created TIMESTAMP NOT NULL, " +
+          s"PRIMARY KEY(persistence_id, sequence_number) " +
+          s")").execute().apply
+      case other: Throwable => println(s"Unexpected error $other")
+    }
   }
 
   override def selectMessagesFor(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long): List[PersistentRepr] = {

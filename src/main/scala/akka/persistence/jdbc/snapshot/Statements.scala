@@ -1,5 +1,7 @@
 package akka.persistence.jdbc.snapshot
 
+import java.sql.SQLSyntaxErrorException
+
 import akka.persistence.jdbc.common.PluginConfig
 import akka.persistence.jdbc.util.{Base64, EncodeDecode}
 import akka.persistence.serialization.Snapshot
@@ -94,13 +96,21 @@ trait H2Statements extends GenericStatements {
 
 trait OracleStatements extends GenericStatements {
   def createTableIfNotExists() {
-    SQL(s"CREATE TABLE IF NOT EXISTS $schema$table ( " +
-      s"persistence_id VARCHAR(255) NOT NULL, " +
-      s"sequence_nr NUMERIC NOT NULL, " +
-      s"snapshot CLOB NOT NULL, " +
-      s"created NUMERIC NOT NULL, " +
-      s"PRIMARY KEY (persistence_id, sequence_nr) " +
-      s")").execute().apply
+    // TODO: Find a more elegant IF NOT EXISTS workaround
+    try {
+      SQL(s"SELECT count(*) FROM $schema$table").execute().apply
+    } catch {
+      case e: SQLSyntaxErrorException if e.getErrorCode == 942 =>
+        SQL(s"CREATE TABLE $schema$table ( " +
+          s"persistence_id VARCHAR(255) NOT NULL, " +
+          s"sequence_nr NUMERIC NOT NULL, " +
+          s"snapshot CLOB NOT NULL, " +
+          s"created NUMERIC NOT NULL, " +
+          s"PRIMARY KEY (persistence_id, sequence_nr) " +
+          s")").execute().apply
+      case other: Throwable => println(s"Unexpected error $other")
+    }
+
   }
 
   override def writeSnapshot(metadata: SnapshotMetadata, snapshot: Snapshot): Unit = {
